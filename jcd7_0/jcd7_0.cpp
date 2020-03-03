@@ -229,19 +229,22 @@ int main(int argc, char** argv)
 			}
 			fs_rect.close();
 			fstream fs2;
-			fs2.open(res_pth + "\\rect\\peak_sis.txt", ios::out);
+			fs2.open(res_pth + "\\rect\\config.txt", ios::out);
+			fs2 << rts.size() << endl;
+			fs2.close();
 			for (int i = 0; i < rts.size(); i++)
 			{
 				putText(buf1, format("%d", i), Point(rts[i].x,rts[i].y), FONT_HERSHEY_COMPLEX_SMALL, 2, Scalar(0, 0, 0), 2);
 				//
-				vector<float> r = ansis::peak_sis(rts[i], s12, max_ix2);
+				fstream fs2;
+				fs2.open(res_pth + "\\rect\\peak_sis"+format("%02d",i)+".txt", ios::out);
+				std::vector<cv::Vec4f> r = ansis::peak_sis(rts[i], s12, max_ix2);
 				for (int j = 0; j < r.size(); j++)
 				{
-					fs2 << r[j] << " ";
+					fs2 << r[j][0] << " " << r[j][1] << " " << r[j][2] << " " << r[j][3] << endl;
 				}
-				fs2 << endl;
+				fs2.close();
 			}
-			fs2.close();
 			imwrite(res_pth + "\\rect\\rect_pos.png", buf1);
 		}
 	}

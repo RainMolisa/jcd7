@@ -77,16 +77,20 @@ if __name__=='__main__':
             i=i+1
     else:
         os.system('..\\..\\x64\\Release\\hand_line')
-    if(os.path.exists('res\\rect\\peak_sis.txt')):
+    if(os.path.exists('res\\rect\\config.txt')):
         i=0
-        with open('res\\rect\\peak_sis.txt', "r") as f1:
+        with open('res\\rect\\config.txt', "r") as f1:
             data = f1.readlines()
-        for dt in data:
-            #plt.clf()
-            arrStr=dt.split(' ')
-            arr=strlist2arr(arrStr)
-            graph_cdf(arr,50,'peak wid '+str(i),'peak wid','res\\rect\\peak_sis'+str(i)+'.png')
-            i=i+1
+        n=int(data[0])
+        #print(n)
+        for i in range(n):
+            strf='res\\rect\\peak_sis'+('%02d'%(i))+'.txt'
+            #print(strf)
+            dt_strf=np.loadtxt(strf)
+            graph_cdf(dt_strf[:,0],50,'peak wid '+str(i)+'_mx0','peak wid','res\\rect\\peak_sis'+str(i)+'_mx0.png')
+            graph_cdf(dt_strf[:,1],50,'peak wid '+str(i)+'_mx1','peak wid','res\\rect\\peak_sis'+str(i)+'_mx1.png')
+            graph_cdf(dt_strf[:,2],50,'peak wid '+str(i)+'_mn0','peak wid','res\\rect\\peak_sis'+str(i)+'_mn0.png')
+            graph_cdf(dt_strf[:,3],50,'peak wid '+str(i)+'_mn1','peak wid','res\\rect\\peak_sis'+str(i)+'_mn1.png')
         
         
         

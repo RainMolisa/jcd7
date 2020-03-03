@@ -4,10 +4,9 @@
 
 namespace ansis
 {
-	std::vector<float> peak_sis(cv::Rect rt,cv::Mat peak,cv::Mat max_i)
+	std::vector<cv::Vec4f> peak_sis(cv::Rect rt,cv::Mat peak,cv::Mat max_i)
 	{
-		std::vector<float> res;
-		res.reserve(rt.width * rt.height);
+		std::vector<cv::Vec4f> res;
 		int len = peak.size[2];
 		for (int y = rt.y; y < rt.y + rt.height; y++)
 		{
@@ -19,13 +18,18 @@ namespace ansis
 					float v1 = peak.at<int16_t>(y, x, i);
 					float v2 = peak.at<int16_t>(y, x, i - 1);
 					float v3 = peak.at<int16_t>(y, x, i + 1);
-					float v = (v2 > v3 ? v2 : v3);
-					float val = (v1 - v)/v1;
+					float v_max = (v2 > v3 ? v2 : v3);
+					float v_min = (v2 < v3 ? v2 : v3);
+					float val1 = (v1 - v_max);
+					float val2 = (v1 - v_max) / v1;
+					float val3 = (v1 - v_min);
+					float val4 = (v1 - v_min) / v1;
+					cv::Vec4f val;
+					val[0] = val1;
+					val[1] = val2;
+					val[2] = val3;
+					val[3] = val4;
 					res.push_back(val);
-				}
-				else
-				{
-					res.push_back(-1);
 				}
 			}
 		}
