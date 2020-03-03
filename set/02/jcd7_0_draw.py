@@ -23,14 +23,34 @@ def is_number(s):
  
     return False
 
+def strlist2arr(strlist):
+    res=[]
+    for val in strlist:
+        if(is_number(val)):
+            v=float(val)
+            res.append(v)
+    return res
+
+def graph_cdf(data1,bins_n,title_str,xlabel_str,savepath):
+    plt.clf()
+    plt.hist(data1,bins=bins_n, facecolor="blue", edgecolor="blue", alpha=0.7)
+    plt.hist(data1,bins=bins_n, facecolor="red", edgecolor="red", alpha=0.7,histtype='step',cumulative=True)
+    plt.xlabel(xlabel_str)
+    plt.title(title_str)
+    plt.savefig(savepath)
+    return
+
 if __name__=='__main__':
     os.system('..\\..\\x64\\Release\\jcd7_0 .\\ ref_640.bin 60cm_800x640-00001065-ir.bin 640 800 943 40 600 64 19')
     if(os.path.exists('res\\point\\point_result.txt')):
         pdata=np.loadtxt('res\\point\\point_result.txt')
+        pt=np.loadtxt('res\\point\\point_best_x.txt')
         [pd_rows,pd_cols]=pdata.shape
         plt.clf()
         for i in range(pd_cols):
             plt.plot(pdata[:,i],label=str(i))
+        for i in range(pd_cols):
+            plt.plot(pt[i,0],pt[i,1],'*')
         plt.legend()
         plt.savefig('res\\point\\map1.png')
     else:
@@ -45,13 +65,7 @@ if __name__=='__main__':
             plt.clf()
             arrF = dtF.split(' ')
             arrT = dtT.split(' ')
-            def strlist2arr(strlist):
-                res=[]
-                for val in strlist:
-                    if(is_number(val)):
-                        v=float(val)
-                        res.append(v)
-                return res
+            
             af=strlist2arr(arrF)
             at=strlist2arr(arrT)
             plt.plot(af,label='no_sub'+str(i))
@@ -63,3 +77,17 @@ if __name__=='__main__':
             i=i+1
     else:
         os.system('..\\..\\x64\\Release\\hand_line')
+    if(os.path.exists('res\\rect\\peak_sis.txt')):
+        i=0
+        with open('res\\rect\\peak_sis.txt', "r") as f1:
+            data = f1.readlines()
+        for dt in data:
+            #plt.clf()
+            arrStr=dt.split(' ')
+            arr=strlist2arr(arrStr)
+            graph_cdf(arr,50,'peak wid '+str(i),'peak wid','res\\rect\\peak_sis'+str(i)+'.png')
+            i=i+1
+        
+        
+        
+        

@@ -8,12 +8,14 @@
 #include "..\jcd7\bin_filter.h"
 #include "..\jcd7\spckl2png.h"
 #include "..\jcd7\binarize.h"
+#include "analysis70.h"
 using namespace std;
 using namespace cv;
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len);
 Mat cut_patch(Mat img, Rect pos);
 float* cvti162f(int16_t* ivec, int n);
 // ..\set\01 ref_640.bin 40cm_800x640-00001395-ir.bin 640 800 943 40 600 64 19
+// ..\set\02 ref_640.bin 60cm_800x640-00001065-ir.bin 640 800 943 40 600 64 19
 // ..\set\04 ref_1280_0.bin 40cm_subpixel1_y1_x64-00000347-ir.bin 1280 800 846.67 42 600 64 25
 int main(int argc, char** argv)
 {
@@ -73,14 +75,14 @@ int main(int argc, char** argv)
 	ofst::set_env(search_box, mbsize);
 	Mat out2;
 	Mat peak2;
-	Mat s12;
+	Mat s12,s13;
 	Mat subpixeMap2;
-	Mat max_ix2;
+	Mat max_ix2,max_ix3;
 	ofst::up = 0;
 	ofst::down = 0;
 	int16_t* ofs2 = ofst::fastBlockMatchPadding_Y_first(ref, cur, out2, peak2, subpixeMap2, s12, max_ix2);
 	float* sftofs2 = cvti162f(ofs2, n);
-	int16_t* ofs2f = ofst::fastBlockMatchPadding_Y_first(ref, cur, out2, peak2, subpixeMap2, s12, max_ix2, false);
+	int16_t* ofs2f = ofst::fastBlockMatchPadding_Y_first(ref, cur, out2, peak2, subpixeMap2, s13, max_ix3, false);
 	float* sftofs2f = cvti162f(ofs2f, n);
 
 	float* sftDepth2 = fs2d::offset2depth(sftofs2, rows, cols, fxy, baseline, wall, search_box, mbsize);
@@ -123,6 +125,8 @@ int main(int argc, char** argv)
 			imwrite(res_pth + "\\point\\pos.png", buf1);
 			fstream fs2;
 			fs2.open(res_pth + "\\point\\point_result.txt", ios::out);
+			fstream fs3;
+			fs3.open(res_pth + "\\point\\point_best_x.txt", ios::out);
 			for (int i = 0; i < s12.size[2]; i++)
 			{
 				for (int j = 0; j < vec.size(); j++)
@@ -135,7 +139,17 @@ int main(int argc, char** argv)
 				}
 				fs2 << endl;
 			}
+			for (int j = 0; j < vec.size(); j++)
+			{
+				int x, y;
+				x = vec[j].x;
+				y = vec[j].y;
+				int i = max_ix2.at<int16_t>(y, x);
+				int v = s12.at<int16_t>(y, x, i);
+				fs3 << i << " " << v << endl;
+			}
 			fs2.close();
+			fs3.close();
 			fst_point.close();
 		}
 	}
@@ -193,7 +207,44 @@ int main(int argc, char** argv)
 			fso2.close();
 		}
 	}
-
+	{
+		fstream fs_rect;
+		fs_rect.open(oin_pth + "\\rect_list.txt", ios::in);
+		if (fs_rect)
+		{
+			system(("rd /Q /S " + res_pth + "\\rect").c_str());
+			system(("mkdir " + res_pth + "\\rect").c_str());
+			Mat buf1 = sftDshw2.clone();
+			vector<Rect> rts;
+			while (!fs_rect.eof())
+			{
+				Rect rt(-1,-1,-1,-1);
+				fs_rect >> rt.x >> rt.y >> rt.width >> rt.height;
+				if (rt.x != -1 && rt.y!=-1 && rt.width!=-1 && rt.height!=-1)
+				{
+					rts.push_back(rt);
+					rectangle(buf1,rt,Scalar(255,255,255));
+					
+				}
+			}
+			fs_rect.close();
+			fstream fs2;
+			fs2.open(res_pth + "\\rect\\peak_sis.txt", ios::out);
+			for (int i = 0; i < rts.size(); i++)
+			{
+				putText(buf1, format("%d", i), Point(rts[i].x,rts[i].y), FONT_HERSHEY_COMPLEX_SMALL, 2, Scalar(0, 0, 0), 2);
+				//
+				vector<float> r = ansis::peak_sis(rts[i], s12, max_ix2);
+				for (int j = 0; j < r.size(); j++)
+				{
+					fs2 << r[j] << " ";
+				}
+				fs2 << endl;
+			}
+			fs2.close();
+			imwrite(res_pth + "\\rect\\rect_pos.png", buf1);
+		}
+	}
 
 	//
 	delete[] ofs2;
