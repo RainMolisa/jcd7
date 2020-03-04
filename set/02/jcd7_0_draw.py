@@ -78,20 +78,27 @@ if __name__=='__main__':
     else:
         os.system('..\\..\\x64\\Release\\hand_line')
     if(os.path.exists('res\\rect\\config.txt')):
-        i=0
+        #i=0
         with open('res\\rect\\config.txt', "r") as f1:
             data = f1.readlines()
         n=int(data[0])
         #print(n)
-        for i in range(n):
-            strf='res\\rect\\peak_sis'+('%02d'%(i))+'.txt'
-            #print(strf)
-            dt_strf=np.loadtxt(strf)
-            graph_cdf(dt_strf[:,0],50,'peak wid '+str(i)+'_mx0','peak wid','res\\rect\\peak_sis'+str(i)+'_mx0.png')
-            graph_cdf(dt_strf[:,1],50,'peak wid '+str(i)+'_mx1','peak wid','res\\rect\\peak_sis'+str(i)+'_mx1.png')
-            graph_cdf(dt_strf[:,2],50,'peak wid '+str(i)+'_mn0','peak wid','res\\rect\\peak_sis'+str(i)+'_mn0.png')
-            graph_cdf(dt_strf[:,3],50,'peak wid '+str(i)+'_mn1','peak wid','res\\rect\\peak_sis'+str(i)+'_mn1.png')
-        
-        
+        bins_n=60
+        def process0(k,file_str):
+            plt.clf()
+            for i in range(n):
+                strf='res\\rect\\peak_sis'+('%02d'%(i))+'.txt'
+                #print(strf)
+                dt_strf=np.loadtxt(strf)
+                #plt.hist(dt_strf[:,k],bins=bins_n, alpha=0.7,density=True,label=str(i))
+                plt.hist(dt_strf[:,k],bins=bins_n, alpha=0.7,histtype='step',cumulative=True,density=True,label=str(i))
+            plt.title(file_str)
+            plt.legend()
+            plt.savefig('res\\rect\\peak_sis_'+file_str+'.png')
+            return
+        process0(0,'max0')
+        process0(1,'max1')
+        process0(2,'min0')
+        process0(3,'min1')
         
         
