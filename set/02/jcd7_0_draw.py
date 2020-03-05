@@ -77,6 +77,21 @@ if __name__=='__main__':
             i=i+1
     else:
         os.system('..\\..\\x64\\Release\\hand_line')
+    if(os.path.exists('res\\line\\line_offset.txt')):
+        i=0
+        with open('res\\line\\line_offset.txt', "r") as f1:
+            data = f1.readlines()
+        for dt in (data):
+            plt.clf()
+            arr = dt.split(' ')
+            
+            a=strlist2arr(arr)
+            plt.plot(a,label='offset'+str(i))
+            #ax=plt.gca()
+            #ax.yaxis.set_major_locator(MultipleLocator(2))
+            plt.legend()
+            plt.savefig('res\\line\\line_offset'+str(i)+'.png')
+            i=i+1
     if(os.path.exists('res\\rect\\config.txt')):
         #i=0
         with open('res\\rect\\config.txt', "r") as f1:

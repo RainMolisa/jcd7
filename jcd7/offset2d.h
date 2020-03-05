@@ -53,6 +53,37 @@ namespace fs2d
 		delete[] fst2;
 		return res;
 	}
+	cv::Mat show_offset2(float* fst, int rows, int cols)
+	{
+		int n = rows * cols;
+		float* fst2 = new float[n];
+		for (int i = 0; i < n; i++)
+		{
+			fst2[i] = fst[i] / 16.0;
+		}
+		float min_val = fst2[0];
+		float max_val = fst2[0];
+		for (int i = 1; i < rows * cols; i++)
+		{
+			float val = fst2[i];
+			min_val = (val < min_val ? val : min_val);
+			max_val = (val > max_val ? val : max_val);
+		}
+		cv::Mat res(rows, cols, CV_8UC1, Scalar(0));
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				int i = y * cols + x;
+				float val = fst2[i];
+				val = (val - min_val) / (max_val - min_val);
+				val = val * 255;
+				res.at<uchar>(y, x) = val;
+			}
+		}
+		delete[] fst2;
+		return res;
+	}
 	float* offset2depth(float* fst,int rows,int cols,
 		float fxy,int baseline,int wall,int search_box,int mbsize)
 	{

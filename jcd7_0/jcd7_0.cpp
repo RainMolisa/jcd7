@@ -9,6 +9,7 @@
 #include "..\jcd7\spckl2png.h"
 #include "..\jcd7\binarize.h"
 #include "analysis70.h"
+#include "downSample.h"
 using namespace std;
 using namespace cv;
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len);
@@ -82,6 +83,7 @@ int main(int argc, char** argv)
 	ofst::down = 0;
 	int16_t* ofs2 = ofst::fastBlockMatchPadding_Y_first(ref, cur, out2, peak2, subpixeMap2, s12, max_ix2);
 	float* sftofs2 = cvti162f(ofs2, n);
+	imwrite(res_pth + "\\offset_shw.png",fs2d::show_offset2(sftofs2,rows,cols));
 	int16_t* ofs2f = ofst::fastBlockMatchPadding_Y_first(ref, cur, out2, peak2, subpixeMap2, s13, max_ix3, false);
 	float* sftofs2f = cvti162f(ofs2f, n);
 
@@ -96,6 +98,32 @@ int main(int argc, char** argv)
 	dbn::write_depth(sftDepth2f, rows, cols, res_pth + "\\soft_depth2f.raw");
 	//sftofs: calculate offset
 	//sftDepth2
+	{
+		system(("rd /Q /S " + res_pth + "\\downsm").c_str());
+		system(("mkdir " + res_pth + "\\downsm").c_str());
+
+		float* dwnsp1 = dsp::dwnsp01(sftofs2, rows, cols);
+		float* dwn1 = fs2d::offset2depth(dwnsp1, rows/2, cols/2, fxy/2, baseline, wall, search_box, mbsize);
+		Mat dw1= psd2::pseudocolor(dwn1, rows/2, cols/2);
+		imwrite(res_pth + "\\downsm\\mthd01.png", dw1);
+		//
+		float* dwnsp2 = dsp::dwnsp02(sftofs2, rows, cols);
+		float* dwn2 = fs2d::offset2depth(dwnsp2, rows / 2, cols / 2, fxy / 2, baseline, wall, search_box, mbsize);
+		Mat dw2 = psd2::pseudocolor(dwn2, rows / 2, cols / 2);
+		imwrite(res_pth + "\\downsm\\mthd02.png", dw2);
+		//
+		float* dwnsp3 = dsp::dwnsp03(sftofs2, rows, cols);
+		float* dwn3 = fs2d::offset2depth(dwnsp3, rows / 2, cols / 2, fxy / 2, baseline, wall, search_box, mbsize);
+		Mat dw3 = psd2::pseudocolor(dwn3, rows / 2, cols / 2);
+		imwrite(res_pth + "\\downsm\\mthd03.png", dw3);
+		//
+		delete[] dwnsp1;
+		delete[] dwn1;
+		delete[] dwnsp2;
+		delete[] dwn2;
+		delete[] dwnsp3;
+		delete[] dwn3;
+	}
 	{
 		fstream fst_point;
 		fst_point.open(oin_pth + "\\point_list.txt", ios::in);
@@ -182,9 +210,10 @@ int main(int argc, char** argv)
 			}
 			fs_line.close();
 			Mat buf1 = sftDshw2.clone();
-			fstream fso1, fso2;
+			fstream fso1, fso2, fso3;
 			fso1.open(res_pth + "\\line\\line_depthT.txt", ios::out);
 			fso2.open(res_pth + "\\line\\line_depthF.txt", ios::out);
+			fso3.open(res_pth + "\\line\\line_offset.txt", ios::out);
 			for (int i = 0; i < line_set.size(); i++)
 			{
 				
@@ -195,16 +224,20 @@ int main(int argc, char** argv)
 					circle(buf1, line_set[i][j], 1, Scalar(255, 255, 255), 1);
 					float v1 = sftDepth2[y * cols + x];
 					float v2 = sftDepth2f[y * cols + x];
+					float v3 = sftofs2[y * cols + x];
 					fso1 << v1 << " ";
 					fso2 << v2 << " ";
+					fso3 << v3 << " ";
 				}
 				fso1 << endl;
 				fso2 << endl;
+				fso3 << endl;
 				putText(buf1, format("%d", i), line_set[i][0], FONT_HERSHEY_COMPLEX_SMALL, 2, Scalar(0, 0, 0), 2);
 			}
 			imwrite(res_pth + "\\line\\line_pos.png", buf1);
 			fso1.close();
 			fso2.close();
+			fso3.close();
 		}
 	}
 	{
