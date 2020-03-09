@@ -15,8 +15,8 @@ namespace ofst
 	int down = 1;// = 1;
 	static const int infOffset = 0;//initialize Y offset
 	static const int invalidXoffset = 64; //default X offset for invalid pixel
-	static const int minNum1Rec = 16;// 32;  //if num 1 in a receive block is smaller than this, deems as invalid
-	static const int goodMatchThres = 16;// 0.5;// 0.5;
+	static const int minNum1Rec = 8;// 32;  //if num 1 in a receive block is smaller than this, deems as invalid
+	static const int goodMatchThres = 32;// 0.5;// 0.5;
 	static const int signDisparity = 1; //+1: disparity=reference - received; -1: disparity=received - reference
 
 	static const int a11 = 1; // 0, 1, 2, 4

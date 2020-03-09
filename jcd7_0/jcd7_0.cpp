@@ -10,6 +10,7 @@
 #include "..\jcd7\binarize.h"
 #include "analysis70.h"
 #include "downSample.h"
+#include "seed_seg.h"
 using namespace std;
 using namespace cv;
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len);
@@ -19,6 +20,8 @@ float* cvti162f(int16_t* ivec, int n);
 // ..\set\02 ref_640.bin 60cm_800x640-00001065-ir.bin 640 800 943 40 600 64 19
 // ..\set\04 ref_1280_0.bin 40cm_subpixel1_y1_x64-00000347-ir.bin 1280 800 846.67 42 600 64 25
 // ..\set\10 ref_dn005.bin f1-00000796-ir.bin 1280 800 936.4 40 600 64 25
+// ..\set\11 ref_1280_0307.bin 45face-00000269-ir.bin 1280 800 846.67 42 600 64 25
+// ..\set\12 ref_1280_0307.bin face40cm-00010632-ir.bin 1280 800 846.67 42 600 64 25
 int main(int argc, char** argv)
 {
 	int rows, cols;
@@ -103,21 +106,75 @@ int main(int argc, char** argv)
 		system(("rd /Q /S " + res_pth + "\\downsm").c_str());
 		system(("mkdir " + res_pth + "\\downsm").c_str());
 
+		int nsct1 = 0, nsct2 = 0, nsct3 = 0;
+
 		float* dwnsp1 = dsp::dwnsp01(sftofs2, rows, cols);
 		float* dwn1 = fs2d::offset2depth(dwnsp1, rows/2, cols/2, fxy/2, baseline, wall, search_box, mbsize);
 		Mat dw1= psd2::pseudocolor(dwn1, rows/2, cols/2);
 		imwrite(res_pth + "\\downsm\\mthd01.png", dw1);
+		{
+			Mat mask(rows/2,cols/2,CV_8UC1,Scalar(0));
+			vector<vector<Point>> sg = sdsg::seed_seg(dwn1, rows / 2, cols / 2);
+			for (int i = 0; i < sg.size(); i++)
+			{
+				if (sg[i].size() <= 4)
+				{
+					nsct1++;
+					for (int j = 0; j < sg[i].size(); j++)
+					{
+						mask.at<uchar>(sg[i][j]) = 255;
+					}
+				}
+			}
+			imwrite(res_pth + "\\downsm\\mk1.png", mask);
+		}
 		//
 		float* dwnsp2 = dsp::dwnsp02(sftofs2, rows, cols);
 		float* dwn2 = fs2d::offset2depth(dwnsp2, rows / 2, cols / 2, fxy / 2, baseline, wall, search_box, mbsize);
 		Mat dw2 = psd2::pseudocolor(dwn2, rows / 2, cols / 2);
 		imwrite(res_pth + "\\downsm\\mthd02.png", dw2);
+		{
+			Mat mask(rows / 2, cols / 2, CV_8UC1, Scalar(0));
+			vector<vector<Point>> sg = sdsg::seed_seg(dwn2, rows / 2, cols / 2);
+			for (int i = 0; i < sg.size(); i++)
+			{
+				if (sg[i].size() <= 4)
+				{
+					nsct2++;
+					for (int j = 0; j < sg[i].size(); j++)
+					{
+						mask.at<uchar>(sg[i][j]) = 255;
+					}
+				}
+			}
+			imwrite(res_pth + "\\downsm\\mk2.png", mask);
+		}
 		//
 		float* dwnsp3 = dsp::dwnsp03(sftofs2, rows, cols);
 		float* dwn3 = fs2d::offset2depth(dwnsp3, rows / 2, cols / 2, fxy / 2, baseline, wall, search_box, mbsize);
 		Mat dw3 = psd2::pseudocolor(dwn3, rows / 2, cols / 2);
 		imwrite(res_pth + "\\downsm\\mthd03.png", dw3);
+		{
+			Mat mask(rows / 2, cols / 2, CV_8UC1, Scalar(0));
+			vector<vector<Point>> sg = sdsg::seed_seg(dwn3, rows / 2, cols / 2);
+			for (int i = 0; i < sg.size(); i++)
+			{
+				if (sg[i].size() <= 4)
+				{
+					nsct3++;
+					for (int j = 0; j < sg[i].size(); j++)
+					{
+						mask.at<uchar>(sg[i][j]) = 255;
+					}
+				}
+			}
+			imwrite(res_pth + "\\downsm\\mk3.png", mask);
+		}
 		//
+		fstream fs;
+		fs.open(res_pth + "\\downsm\\res.txt",ios::out);
+		fs << nsct1 << endl << nsct2 << endl << nsct3 << endl;
+		fs.close();
 		delete[] dwnsp1;
 		delete[] dwn1;
 		delete[] dwnsp2;
