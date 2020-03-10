@@ -121,4 +121,27 @@ namespace dsp
 		}
 		return res;
 	}
+	int dwnCntInv3(float* depth, int rows, int cols,float inv)
+	{
+		int r2 = rows / 2;
+		int c2 = cols / 2;
+		int n = r2 * c2;
+		for (int y = 0; y < r2; y++)
+		{
+			for (int x = 0; x < c2; x++)
+			{
+				cv::Point p1(2 * x, 2 * y);
+				cv::Point p2(2 * x + 1, 2 * y);
+				cv::Point p3(2 * x, 2 * y + 1);
+				cv::Point p4(2 * x + 1, 2 * y + 1);
+				float set[4];
+				set[0] = depth[p1.y * cols + p1.x];
+				set[1] = depth[p2.y * cols + p2.x];
+				set[2] = depth[p3.y * cols + p3.x];
+				set[3] = depth[p4.y * cols + p4.x];
+				
+			}
+		}
+		return 0;
+	}
 };

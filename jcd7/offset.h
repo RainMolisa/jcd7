@@ -14,7 +14,7 @@ namespace ofst
 	int up = -1;// -1;
 	int down = 1;// = 1;
 	static const int infOffset = 0;//initialize Y offset
-	static const int invalidXoffset = 64; //default X offset for invalid pixel
+	static const int invalidXoffset = 63680; //default X offset for invalid pixel
 	static const int minNum1Rec = 8;// 32;  //if num 1 in a receive block is smaller than this, deems as invalid
 	static const int goodMatchThres = 32;// 0.5;// 0.5;
 	static const int signDisparity = 1; //+1: disparity=reference - received; -1: disparity=received - reference
@@ -25,13 +25,7 @@ namespace ofst
 
 	const static float binsize = 7;
 	const static float th0 = 1.1;// 1.1;
-
-	const static float th_l = 1.03125;// 1.03125;
-	const static float th_h = 7;// 8;
-	const static float th_abs = 5;// 5;
-
 	const static float pixelnum = binsize * binsize, center = binsize / 2;
-
 	void set_env(int sbx,int mbs)
 	{
 		search_box = sbx;
@@ -42,9 +36,10 @@ namespace ofst
 
 	int subpixel_4bit(int numerator, int denom);
 
-	int16_t* fastBlockMatchPadding_Y_first(Mat& ref, Mat& rel, Mat& out, Mat& peakMatch,Mat& subpixeMap,Mat& score1,Mat& max_ix,bool is_subpixel=true)  /*øÈ∆•≈‰*/
+	int16_t* fastBlockMatchPadding_Y_first(Mat& ref, Mat& rel,\
+		Mat& out, Mat& peakMatch,Mat& subpixeMap,Mat& score1,Mat& max_ix,\
+		bool is_subpixel=true)  /*øÈ∆•≈‰*/
 	{
-
 		//const int mbsize = 19;// 23;// 19;	//search window size
 		int semi_mb = (int)(mbsize / 2);
 #ifdef mk_log
@@ -73,6 +68,7 @@ namespace ofst
 		//Mat out = Mat(cur.rows, cur.cols, CV_8UC1);
 		out.create(height, width, CV_8UC1);
 		max_ix.create(height, width, CV_16SC1);
+
 
 		int* horizSum = (int*)malloc(sizeof(int) * height1 * width1);
 
@@ -363,7 +359,7 @@ namespace ofst
 				else
 				{
 					bestYOffset[i * width + j] = 0;
-					bestXOffset[i * width + j] = 63680; // 16 * (invalidXoffset - l);//740
+					bestXOffset[i * width + j] = invalidXoffset; // 16 * (invalidXoffset - l);//740
 					out.at<uchar>(i, j) = 0; // (invalidXoffset - l);
 					subpixeMap.at<int16_t>(i, j) = 0;
 				}

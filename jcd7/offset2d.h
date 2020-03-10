@@ -107,5 +107,11 @@ namespace fs2d
 		}
 		return res;
 	}
+	float offset2depth(float ofset, float fxy, int baseline, int wall)
+	{
+		float dval = (fxy * baseline * wall) / \
+			(fxy * baseline - wall * ((ofset) / 16.0));
+		return dval;
+	}
 };
 
