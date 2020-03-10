@@ -141,13 +141,28 @@ int main(int argc, char** argv)
 		fs << ict1 << " " << ict2 << " " << ict3 << endl;
 		fs.close();
 		//
+		fstream dif_fs;
+		dif_fs.open(res_pth + "\\downsm\\dif_fs.txt", ios::out);
 		int r2 = rows / 2;
 		int c2 = cols / 2;
 		int n = r2 * c2;
-		for (int i = 0; i < n; i++)
+		const int yw = 10;
+		const int xw = 20;
+		for (int y=0;y<r2;y++)
 		{
-			float v = dwn2[i]-dwn1[i];
+			for (int x = 0; x < c2; x++)
+			{
+				int i = y * c2 + x;
+				float v = dwn2[i] - dwn1[i];
+				if (x <= xw || x >= c2 - xw || y <= yw || y >= r2 - yw)
+				{
+					v = 0;
+				}
+				dif_fs << v << " ";
+			}
+			dif_fs << endl;
 		}
+		dif_fs.close();
 		//
 		delete[] dwnsp1;
 		delete[] dwn1;
