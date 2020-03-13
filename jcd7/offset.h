@@ -7,10 +7,10 @@
 
 namespace ofst
 {
-	int search_box = 64;
 	int mbsize = 19;// 23;// 19;	//search window size
-	int l = -(search_box - mbsize / 2);// -64;
-	int r = (search_box - mbsize / 2);// 32;
+	int l = -64;// -64;
+	int r = 64;// 32;
+	int search_box = r + mbsize / 2;
 	int up = -1;// -1;
 	int down = 1;// = 1;
 	static const int infOffset = 0;//initialize Y offset
@@ -28,10 +28,10 @@ namespace ofst
 	const static float pixelnum = binsize * binsize, center = binsize / 2;
 	void set_env(int sbx,int mbs)
 	{
-		search_box = sbx;
 		mbsize = mbs;
-		l = -(search_box - mbsize / 2);
-		r = (search_box - mbsize / 2);
+		l = -sbx;
+		r = sbx;
+		search_box = r + mbsize / 2;
 	}
 
 	int subpixel_4bit(int numerator, int denom);

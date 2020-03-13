@@ -94,4 +94,36 @@ namespace sdsg
 	}
 };
 
+//namespace sgns
+//{
+//	float area_val(vector<Point> &area,float* depth,int rows,int cols)
+//	{
+//		int len = area.size();
+//		
+//	}
+//	float* denoise(float* depth, int rows, int cols, vector<vector<Point>>& dp_set)
+//	{
+//		int n = rows * cols;
+//		float* d = new float[n];
+//		for (int i = 0; i < dp_set.size(); i++)
+//		{
+//			int dsn = dp_set[i].size();
+//			if (dsn >= 200)
+//			{
+//				for (int j = 0; j < dsn; j++)
+//				{
+//					int x = dp_set[i][j].x;
+//					int y = dp_set[i][j].y;
+//					d[y * cols + x] = depth[y * cols + x];
+//				}
+//			}
+//			else
+//			{
+//
+//			}
+//		}
+//		return d;
+//	}
+//};
+
 #undef jabs

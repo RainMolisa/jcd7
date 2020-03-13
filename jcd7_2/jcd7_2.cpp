@@ -1,20 +1,34 @@
+/*
+zhe shi yi ge que ding san ban mei you wen ti de shiyan
+*/
+
 #include <fstream>
-#include "dpthbin.h"
-#include "pseudocolor.h"
-#include "offset2d.h"
-#include "binref.h"
-#include "offset.h"
-#include "bin_filter.h"
-#include "spckl2png.h"
-#include "binarize.h"
+#include <vector>
+#include "..\jcd7\dpthbin.h"
+#include "..\jcd7\pseudocolor.h"
+#include "..\jcd7\offset2d.h"
+#include "..\jcd7\binref.h"
+#include "..\jcd7\offset.h"
+#include "..\jcd7\bin_filter.h"
+#include "..\jcd7\spckl2png.h"
+#include "..\jcd7\binarize.h"
+#include "..\jcd7_0\seed_seg.h"
+#include "hand_denoise.h"
 using namespace std;
 using namespace cv;
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len);
 Mat cut_patch(Mat img, Rect pos);
 float* cvti162f(int16_t* ivec, int n);
+
 // ..\set\01 ref_640.bin 40cm_800x640-00001395-ir.bin 640 800 943 40 600 64 19
+// ..\set\02 ref_640.bin 60cm_800x640-00001065-ir.bin 640 800 943 40 600 64 19
 // ..\set\04 ref_1280_0.bin 40cm_subpixel1_y1_x64-00000347-ir.bin 1280 800 846.67 42 600 64 25
-// 
+// ..\set\10 ref_dn005.bin f1-00000796-ir.bin 1280 800 936.4 40 600 64 25
+// ..\set\11 ref_1280_0307.bin 45face-00000269-ir.bin 1280 800 846.67 42 600 64 25
+// ..\set\12 ref_1280_0307.bin face40cm-00010632-ir.bin 1280 800 846.67 42 600 64 25
+// ..\set\15 ref_1280x800_600mm.bin 2020_03_12_13_30_49__1280_800_Speckle.bin 1280 800 941.3 40 600 64 25
+// ..\set\16 ref_1280x800_600mm.bin 2020_03_12_13_31_05__1280_800_Speckle.bin 1280 800 941.3 40 600 64 25
+// ..\set\16 ref_1280x800_1000mm.bin 2020_03_12_13_31_05__1280_800_Speckle.bin 1280 800 941.3 40 1000 64 25
 int main(int argc, char** argv)
 {
 	int rows, cols;
@@ -40,10 +54,12 @@ int main(int argc, char** argv)
 		sscanf_s(argv[9], "%d", &search_box);
 		sscanf_s(argv[10], "%d", &mbsize);
 	}
+	printf("start\n");
 	string res_pth = wrk_pth + "\\res";
+	string oin_pth = wrk_pth + "\\in_other";
+	system(("mkdir " + oin_pth).c_str());
 	system(("rd /Q /S " + res_pth).c_str());
 	system(("mkdir " + res_pth).c_str());
-	//
 	//
 	float* hd_depth = dbn::read_depth(wrk_pth + "\\hard_depth.bin", rows, cols);
 	if (hd_depth != NULL)
@@ -54,7 +70,7 @@ int main(int argc, char** argv)
 	Mat ref = binref(wrk_pth + "\\" + ref_pth, rows, cols);
 	//ref = bft::bin_filter02(ref);
 	imwrite(res_pth + "\\ref.png", ref);
-	Mat cur_ir = skg::spckl2png(wrk_pth + "\\" + cur_pth, rows, cols,0);
+	Mat cur_ir = skg::spckl2png(wrk_pth + "\\" + cur_pth, rows, cols, 0);
 	imwrite(res_pth + "\\cur_ir.png", cur_ir);
 	Mat cur;
 	bnz::EnHance(cur_ir, cur);
@@ -70,63 +86,44 @@ int main(int argc, char** argv)
 	//
 	int n = rows * cols;
 	ofst::set_env(search_box, mbsize);
-	Mat out1,out2;
-	Mat peak1,peak2;
-	Mat s11,s12;
-	Mat subpixeMap1,subpixeMap2;
-	Mat max_ix1,max_ix2;
-	int16_t* ofs1 = ofst::fastBlockMatchPadding_Y_first(ref, cur, out1, peak1, subpixeMap1, s11, max_ix1);
-	s11.release();
+	Mat out2;
+	Mat peak2;
+	Mat s12;
+	Mat subpixeMap2;
+	Mat max_ix2;
 	ofst::up = 0;
 	ofst::down = 0;
 	int16_t* ofs2 = ofst::fastBlockMatchPadding_Y_first(ref, cur, out2, peak2, subpixeMap2, s12, max_ix2);
-	s12.release();
-	float* sftofs1 = cvti162f(ofs1, n);
 	float* sftofs2 = cvti162f(ofs2, n);
-	int16_t* ofs3 = ofst::fastBlockMatchPadding_Y_first(ref, cur, out2, peak2, subpixeMap2, s12, max_ix2,false);
-	float* sftofs3 = cvti162f(ofs3, n);
-	
-	float* sftDepth1 = fs2d::offset2depth(sftofs1, rows, cols, fxy, baseline, wall, search_box, mbsize);
-	Mat sftDshw1 = psd2::pseudocolor(sftDepth1, rows, cols);
-	imwrite(res_pth + "\\sftDshw1.png", sftDshw1);
-	dbn::write_depth(sftDepth1, rows, cols, res_pth + "\\soft_depth1.raw");
+	imwrite(res_pth + "\\offset_shw.png", fs2d::show_offset2(sftofs2, rows, cols));
 
 	float* sftDepth2 = fs2d::offset2depth(sftofs2, rows, cols, fxy, baseline, wall, search_box, mbsize);
 	Mat sftDshw2 = psd2::pseudocolor(sftDepth2, rows, cols);
 	imwrite(res_pth + "\\sftDshw2.png", sftDshw2);
 	dbn::write_depth(sftDepth2, rows, cols, res_pth + "\\soft_depth2.raw");
 	//
-	float* sftDepth3 = fs2d::offset2depth(sftofs3, rows, cols, fxy, baseline, wall, search_box, mbsize);
-	Mat sftDshw3 = psd2::pseudocolor(sftDepth3, rows, cols);
-	imwrite(res_pth + "\\sftDshw2_nosub.png", sftDshw3);
-	dbn::write_depth(sftDepth3, rows, cols, res_pth + "\\sftDshw2_nosub.raw");
-	//fstDepth: input offset
 	//sftofs: calculate offset
-	
-	
-	
-	
+	//sftDepth2
+	vector<vector<Point>> dp_set=sdsg::seed_seg(sftDepth2, rows, cols);
+	string fs_str = oin_pth + "\\hand_denoise_dpth.raw";
+	float* dn_depth = dbn::read_depth(fs_str, rows, cols);
+	if (!dn_depth)
+	{
+		dn_depth=hdde::hand_dn(sftDepth2, rows, cols, dp_set, fs_str);
+	}
+	imwrite(res_pth + "\\dn_depth.png", psd2::pseudocolor(dn_depth, rows, cols));
+
+
 	//
-	delete[] ofs1;
-	delete[] sftofs1;
+	
 	delete[] ofs2;
+	delete[] dn_depth;
 	delete[] sftofs2;
-	delete[] sftDepth1;
 	delete[] sftDepth2;
-	delete[] ofs3;
-	delete[] sftofs3;
 	return 0;
 }
 
-float* cvti162f(int16_t* ivec,int n)
-{
-	float* res = new float[n];
-	for (int i = 0; i < n; i++)
-	{
-		res[i] = ivec[i];
-	}
-	return res;
-}
+
 
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len)
 {
@@ -152,9 +149,9 @@ Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len)
 	return difres;
 }
 
-Mat cut_patch(Mat img,Rect pos)
+Mat cut_patch(Mat img, Rect pos)
 {
-	Mat res(pos.height,pos.width,CV_8UC1);
+	Mat res(pos.height, pos.width, CV_8UC1);
 	for (int y = pos.y; y < pos.y + pos.height; y++)
 	{
 		for (int x = pos.x; x < pos.x + pos.width; x++)
@@ -174,4 +171,13 @@ Mat cut_patch(Mat img,Rect pos)
 	return res;
 }
 
+float* cvti162f(int16_t* ivec, int n)
+{
+	float* res = new float[n];
+	for (int i = 0; i < n; i++)
+	{
+		res[i] = ivec[i];
+	}
+	return res;
+}
 

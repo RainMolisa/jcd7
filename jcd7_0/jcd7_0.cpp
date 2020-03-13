@@ -25,6 +25,9 @@ void downSampleProcess(int rows, int cols, float* dwn1, \
 // ..\set\10 ref_dn005.bin f1-00000796-ir.bin 1280 800 936.4 40 600 64 25
 // ..\set\11 ref_1280_0307.bin 45face-00000269-ir.bin 1280 800 846.67 42 600 64 25
 // ..\set\12 ref_1280_0307.bin face40cm-00010632-ir.bin 1280 800 846.67 42 600 64 25
+// ..\set\15 ref_1280x800_600mm.bin 2020_03_12_13_30_49__1280_800_Speckle.bin 1280 800 941.3 40 600 64 25
+// ..\set\16 ref_1280x800_600mm.bin 2020_03_12_13_31_05__1280_800_Speckle.bin 1280 800 941.3 40 600 64 25
+// ..\set\16 ref_1280x800_1000mm.bin 2020_03_12_13_31_05__1280_800_Speckle.bin 1280 800 941.3 40 1000 64 25
 int main(int argc, char** argv)
 {
 	int rows, cols;
