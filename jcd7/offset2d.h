@@ -113,5 +113,26 @@ namespace fs2d
 			(fxy * baseline - wall * ((ofset) / 16.0));
 		return dval;
 	}
+	float* depth2offset(float* depth,int rows,int cols,
+		float fxy,int baseline,int wall,float inv_d)
+	{
+		int n = rows * cols;
+		float* offset = new float[n];
+		for (int i = 0; i < n; i++)
+		{
+			float val = depth[i];
+			if (val >= inv_d - 0.5 && val <= inv_d + 0.5)
+			{
+				offset[i] = 0;
+			}
+			else
+			{
+				float buf = fxy * baseline;
+				offset[i] = 16 * (buf / wall - buf / val);
+			}
+			
+		}
+		return offset;
+	}
 };
 

@@ -94,36 +94,95 @@ namespace sdsg
 	}
 };
 
-//namespace sgns
-//{
-//	float area_val(vector<Point> &area,float* depth,int rows,int cols)
-//	{
-//		int len = area.size();
-//		
-//	}
-//	float* denoise(float* depth, int rows, int cols, vector<vector<Point>>& dp_set)
-//	{
-//		int n = rows * cols;
-//		float* d = new float[n];
-//		for (int i = 0; i < dp_set.size(); i++)
-//		{
-//			int dsn = dp_set[i].size();
-//			if (dsn >= 200)
-//			{
-//				for (int j = 0; j < dsn; j++)
-//				{
-//					int x = dp_set[i][j].x;
-//					int y = dp_set[i][j].y;
-//					d[y * cols + x] = depth[y * cols + x];
-//				}
-//			}
-//			else
-//			{
-//
-//			}
-//		}
-//		return d;
-//	}
-//};
+namespace sgns
+{
+	float area_val(vector<Point> &area,float* depth,int rows,int cols)
+	{
+		int len = area.size();
+		int max_x = area[0].x;
+		int max_y = area[0].y;
+		int min_x = area[0].x;
+		int min_y = area[0].y;
+		for (int i = 1; i < len; i++)
+		{
+			int x = area[i].x;
+			int y = area[i].y;
+			max_x = (max_x < x ? x : max_x);
+			max_y = (max_y < y ? y : max_y);
+			min_x = (min_x < x ? min_x : x);
+			min_y = (min_y < y ? min_y : y);
+		}
+		max_x++;
+		max_y++;
+		min_x--;
+		min_y--;
+		vector<float> set;
+		for (int x = min_x; x <= max_x; x++)
+		{
+			int y = min_y;
+			if (x >= 0 && x < cols && y >= 0 && y < rows)
+			{
+				set.push_back(depth[y*cols+x]);
+			}
+		}
+		for (int x = min_x; x <= max_x; x++)
+		{
+			int y = max_y;
+			if (x >= 0 && x < cols && y >= 0 && y < rows)
+			{
+				set.push_back(depth[y * cols + x]);
+			}
+		}
+		for (int y = min_y; y <= max_y; y++)
+		{
+			int x = min_x;
+			if (x >= 0 && x < cols && y >= 0 && y < rows)
+			{
+				set.push_back(depth[y * cols + x]);
+			}
+		}
+		for (int y = min_y; y <= max_y; y++)
+		{
+			int x = max_x;
+			if (x >= 0 && x < cols && y >= 0 && y < rows)
+			{
+				set.push_back(depth[y * cols + x]);
+			}
+		}
+		sort(set.begin(), set.end());
+		int a = (set.size()) / 2;
+		float res = set[a];
+		return res;
+	}
+	float* denoise(float* depth, int rows, int cols, vector<vector<Point>>& dp_set)
+	{
+		int n = rows * cols;
+		float* d = new float[n];
+		for (int i = 0; i < dp_set.size(); i++)
+		{
+			int dsn = dp_set[i].size();
+			if (dsn >= 50)
+			{
+				for (int j = 0; j < dsn; j++)
+				{
+					int x = dp_set[i][j].x;
+					int y = dp_set[i][j].y;
+					d[y * cols + x] = depth[y * cols + x];
+				}
+			}
+			else
+			{
+				float v1 = area_val(dp_set[i], d, rows, cols);
+				for (int j = 0; j < dsn; j++)
+				{
+					int x = dp_set[i][j].x;
+					int y = dp_set[i][j].y;
+					d[y * cols + x] = v1;
+				}
+			}
+		}
+		return d;
+	}
+};
 
 #undef jabs

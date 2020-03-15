@@ -14,6 +14,7 @@ zhe shi yi ge que ding san ban mei you wen ti de shiyan
 #include "..\jcd7\binarize.h"
 #include "..\jcd7_0\seed_seg.h"
 #include "hand_denoise.h"
+#include "offset2target.h"
 using namespace std;
 using namespace cv;
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len);
@@ -27,6 +28,7 @@ float* cvti162f(int16_t* ivec, int n);
 // ..\set\11 ref_1280_0307.bin 45face-00000269-ir.bin 1280 800 846.67 42 600 64 25
 // ..\set\12 ref_1280_0307.bin face40cm-00010632-ir.bin 1280 800 846.67 42 600 64 25
 // ..\set\15 ref_1280x800_600mm.bin 2020_03_12_13_30_49__1280_800_Speckle.bin 1280 800 941.3 40 600 64 25
+// ..\set\15 ref_1280x800_1000mm.bin 2020_03_12_13_30_49__1280_800_Speckle.bin 1280 800 941.3 40 1000 64 25
 // ..\set\16 ref_1280x800_600mm.bin 2020_03_12_13_31_05__1280_800_Speckle.bin 1280 800 941.3 40 600 64 25
 // ..\set\16 ref_1280x800_1000mm.bin 2020_03_12_13_31_05__1280_800_Speckle.bin 1280 800 941.3 40 1000 64 25
 int main(int argc, char** argv)
@@ -104,22 +106,94 @@ int main(int argc, char** argv)
 	//
 	//sftofs: calculate offset
 	//sftDepth2
+	//
+	float inv_d = fs2d::offset2depth(int16_t(ofst::invalidXoffset), fxy, baseline, wall);
+	for (int i = 0; i < n; i++)
+	{
+		float val = sftDepth2[i];
+		if (val >= 1500)
+		{
+			sftDepth2[i] = inv_d;
+		}
+	}
+	const int edge_cols = 60;
+	const int edge_rows = 15;
+	{
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < edge_cols; x++)
+			{
+				sftDepth2[y * cols + x] = inv_d;
+			}
+		}
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = cols - edge_cols; x < cols; x++)
+			{
+				sftDepth2[y * cols + x] = inv_d;
+			}
+		}
+		for (int y = 0; y < edge_rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				sftDepth2[y * cols + x] = inv_d;
+			}
+		}
+		for (int y = rows - edge_rows; y < rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				sftDepth2[y * cols + x] = inv_d;
+			}
+		}
+	}
+	
 	vector<vector<Point>> dp_set=sdsg::seed_seg(sftDepth2, rows, cols);
+	float *dpth2 =sgns::denoise(sftDepth2, rows, cols, dp_set);
 	string fs_str = oin_pth + "\\hand_denoise_dpth.raw";
 	float* dn_depth = dbn::read_depth(fs_str, rows, cols);
 	if (!dn_depth)
 	{
-		dn_depth=hdde::hand_dn(sftDepth2, rows, cols, dp_set, fs_str);
+		dn_depth=hdde::hand_dn(dpth2, rows, cols, dp_set, fs_str);
 	}
 	imwrite(res_pth + "\\dn_depth.png", psd2::pseudocolor(dn_depth, rows, cols));
-
-
+	float* invs_ofst = fs2d::depth2offset(dn_depth, rows, cols, fxy, baseline, wall, inv_d);
+	Mat fake_trg = f2tg::offset2targ(ref, invs_ofst);
+	imwrite(res_pth + "\\fake_trg.png", fake_trg);
+	for (int y = 0; y < rows; y++)
+	{
+		for (int x = 0; x < cols; x++)
+		{
+			fake_trg.at<uchar>(y, x) = fake_trg.at<uchar>(y, x) / 255;
+		}
+	}
+	float* fake_offs = NULL;
+	float* fake_depth = NULL;
+	{
+		Mat out;
+		Mat peak;
+		Mat s1;
+		Mat subpixeMap;
+		Mat max_ix;
+		ofst::up = 0;
+		ofst::down = 0;
+		int16_t* fake_ofs = ofst::fastBlockMatchPadding_Y_first(ref, fake_trg, out, peak, subpixeMap, s1, max_ix);
+		fake_offs = cvti162f(fake_ofs, n);
+		delete[] fake_ofs;
+		fake_depth = fs2d::offset2depth(fake_offs, rows, cols, fxy, baseline, wall, search_box, mbsize);
+		imwrite(res_pth + "\\fake_depth.png", psd2::pseudocolor(fake_depth, rows, cols));
+	}
 	//
 	
 	delete[] ofs2;
 	delete[] dn_depth;
 	delete[] sftofs2;
 	delete[] sftDepth2;
+	delete[] dpth2;
+	delete[] invs_ofst;
+	delete[] fake_offs;
+	delete[] fake_depth;
 	return 0;
 }
 
