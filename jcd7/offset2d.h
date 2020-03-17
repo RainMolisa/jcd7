@@ -121,14 +121,15 @@ namespace fs2d
 		for (int i = 0; i < n; i++)
 		{
 			float val = depth[i];
-			if (val >= inv_d - 0.5 && val <= inv_d + 0.5)
+			/*if (val >= inv_d - 0.5 && val <= inv_d + 0.5)
 			{
 				offset[i] = 0;
 			}
-			else
+			else*/
 			{
 				float buf = fxy * baseline;
-				offset[i] = 16 * (buf / wall - buf / val);
+				float buf2 = (buf / float(wall) - buf / val);
+				offset[i] = 16.0 * buf2;
 			}
 			
 		}

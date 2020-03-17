@@ -3,6 +3,7 @@
 #include<vector>
 #include"..\jcd7\pseudocolor.h"
 #include"..\jcd7\dpthbin.h"
+#include "..\jcd7_0\seed_seg.h"
 namespace hdde
 {
 	const std::string win_name = "point";
@@ -45,6 +46,8 @@ namespace hdde
 					p[(*setp)[i1][i].y * cols + (*setp)[i1][i].x] = val;
 				}
 			}
+			//system("cls");
+
 			break;
 		}
 		case cv::EVENT_LBUTTONUP:
@@ -119,8 +122,11 @@ namespace hdde
 			}
 		}
 		cv::destroyAllWindows();
-		dbn::write_depth(res, rows, cols, ot_file);
-		return res;
+		std::vector<std::vector<cv::Point>> s2 = sdsg::seed_seg(res, rows, cols);
+		float* res2 = sgns::denoise(res, rows, cols, s2);
+		delete[] res;
+		dbn::write_depth(res2, rows, cols, ot_file);
+		return res2;
 	}
 	cv::Mat img_rect(cv::Mat& img,cv::Rect area)
 	{

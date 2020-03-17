@@ -15,12 +15,13 @@ zhe shi yi ge que ding san ban mei you wen ti de shiyan
 #include "..\jcd7_0\seed_seg.h"
 #include "hand_denoise.h"
 #include "offset2target.h"
+#include "..\jcd7\bin_filter.h"
 using namespace std;
 using namespace cv;
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len);
 Mat cut_patch(Mat img, Rect pos);
 float* cvti162f(int16_t* ivec, int n);
-
+void post_processing(float* sftDepth2, int rows, int cols, float inv_d);
 // ..\set\01 ref_640.bin 40cm_800x640-00001395-ir.bin 640 800 943 40 600 64 19
 // ..\set\02 ref_640.bin 60cm_800x640-00001065-ir.bin 640 800 943 40 600 64 19
 // ..\set\04 ref_1280_0.bin 40cm_subpixel1_y1_x64-00000347-ir.bin 1280 800 846.67 42 600 64 25
@@ -77,12 +78,17 @@ int main(int argc, char** argv)
 	Mat cur;
 	bnz::EnHance(cur_ir, cur);
 	imwrite(res_pth + "\\cur.png", cur);
+	//
+	Mat cur2 = bft::bin_filter02(cur);
+	imwrite(res_pth+"\\cur2.png",cur2);
+	//
 	for (int y = 0; y < rows; y++)
 	{
 		for (int x = 0; x < cols; x++)
 		{
 			ref.at<uchar>(y, x) = ref.at<uchar>(y, x) / 255;
 			cur.at<uchar>(y, x) = cur.at<uchar>(y, x) / 255;
+			cur2.at<uchar>(y, x) = cur2.at<uchar>(y, x) / 255;
 		}
 	}
 	//
@@ -108,6 +114,170 @@ int main(int argc, char** argv)
 	//sftDepth2
 	//
 	float inv_d = fs2d::offset2depth(int16_t(ofst::invalidXoffset), fxy, baseline, wall);
+	post_processing(sftDepth2, rows, cols, inv_d);
+	//
+	imwrite(res_pth + "\\proc_d2.png", psd2::pseudocolor(sftDepth2, rows, cols));
+	//
+	vector<vector<Point>> dp_set=sdsg::seed_seg(sftDepth2, rows, cols);
+	float *dpth2 =sgns::denoise(sftDepth2, rows, cols, dp_set);
+	string fs_str = oin_pth + "\\hand_denoise_dpth.raw";
+	float* dn_depth = dbn::read_depth(fs_str, rows, cols);
+	if (!dn_depth)
+	{
+		dn_depth=hdde::hand_dn(dpth2, rows, cols, dp_set, fs_str);
+	}
+	imwrite(res_pth + "\\dn_depth.png", psd2::pseudocolor(dn_depth, rows, cols));
+	float* invs_ofst = fs2d::depth2offset(dn_depth, rows, cols, fxy, baseline, wall, inv_d);
+	Mat fake_trg = f2tg::offset2targ(ref,cur2, invs_ofst, int16_t(ofst::invalidXoffset));
+	imwrite(res_pth + "\\fake_trg.png", fake_trg);
+	for (int y = 0; y < rows; y++)
+	{
+		for (int x = 0; x < cols; x++)
+		{
+			fake_trg.at<uchar>(y, x) = fake_trg.at<uchar>(y, x) / 255;
+		}
+	}
+	float* fake_offs = NULL;
+	float* fake_depth = NULL;
+	{
+		Mat out;
+		Mat peak;
+		Mat s1;
+		Mat subpixeMap;
+		Mat max_ix;
+		ofst::up = 0;
+		ofst::down = 0;
+		int16_t* fake_ofs = ofst::fastBlockMatchPadding_Y_first(ref, fake_trg, out, peak, subpixeMap, s1, max_ix);
+		fake_offs = cvti162f(fake_ofs, n);
+		delete[] fake_ofs;
+		fake_depth = fs2d::offset2depth(fake_offs, rows, cols, fxy, baseline, wall, search_box, mbsize);
+		imwrite(res_pth + "\\fake_depth.png", psd2::pseudocolor(fake_depth, rows, cols));
+	}
+	//
+	Mat dp_error01(rows,cols,CV_8UC1);
+	for (int i = 0; i < n; i++)
+	{
+		float v = sftDepth2[i] - dn_depth[i];
+		v = (v > 0 ? v : -v);
+		if (v > 1.0)
+		{
+			int x = i % cols;
+			int y = i / cols;
+			dp_error01.at<uchar>(y, x)=255;
+		}
+	}
+	imwrite(res_pth + "\\dp_error01.png", dp_error01);
+	//
+	float* cur2_offs = NULL;
+	float* cur2_depth = NULL;
+	{
+		Mat out;
+		Mat peak;
+		Mat s1;
+		Mat subpixeMap;
+		Mat max_ix;
+		ofst::up = 0;
+		ofst::down = 0;
+		int16_t* cur2_ofs = ofst::fastBlockMatchPadding_Y_first(ref, cur2, out, peak, subpixeMap, s1, max_ix);
+		cur2_offs = cvti162f(cur2_ofs, n);
+		delete[] cur2_ofs;
+		cur2_depth = fs2d::offset2depth(cur2_offs, rows, cols, fxy, baseline, wall, search_box, mbsize);
+		post_processing(cur2_depth, rows, cols, inv_d);
+		imwrite(res_pth + "\\cur2_depth.png", psd2::pseudocolor(cur2_depth, rows, cols));
+	}
+	Mat dp_error02(rows, cols, CV_8UC1);
+	for (int i = 0; i < n; i++)
+	{
+		float v = cur2_depth[i] - dn_depth[i];
+		v = (v > 0 ? v : -v);
+		if (v > 1.0)
+		{
+			int x = i % cols;
+			int y = i / cols;
+			dp_error02.at<uchar>(y, x) = 255;
+		}
+	}
+	imwrite(res_pth + "\\dp_error02.png", dp_error02);
+	Mat cur2_fake(rows,cols,CV_8UC3,Scalar(0,0,0));
+	{
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				if (cur2.at<uchar>(y, x) > 0)
+				{
+					cur2_fake.at<uchar>(y, 3 * x + 0) = 255;
+				}
+				if (fake_trg.at<uchar>(y, x) > 0)
+				{
+					cur2_fake.at<uchar>(y, 3 * x + 2) = 255;
+				}
+				/*if (dp_error02.at<uchar>(y, x) > 0)
+				{
+					cur2_fake.at<uchar>(y, 3 * x + 1) = 128;
+				}*/
+			}
+		}
+	}
+	imwrite(res_pth + "\\cur2_fake.png", cur2_fake);
+	//
+	Mat cur_fake(rows, cols, CV_8UC3, Scalar(0, 0, 0));
+	{
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				if (cur.at<uchar>(y, x) > 0)
+				{
+					cur_fake.at<uchar>(y, 3 * x + 0) = 255;
+				}
+				if (fake_trg.at<uchar>(y, x) > 0)
+				{
+					cur_fake.at<uchar>(y, 3 * x + 2) = 255;
+				}
+				if (dp_error01.at<uchar>(y, x) > 0)
+				{
+					cur_fake.at<uchar>(y, 3 * x + 1) = 128;
+				}
+			}
+		}
+	}
+	imwrite(res_pth + "\\cur_fake.png", cur_fake);
+	Mat cur_cur2(rows, cols, CV_8UC3, Scalar(0, 0, 0));
+	{
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				if (cur.at<uchar>(y, x) > 0)
+				{
+					cur_cur2.at<uchar>(y, 3 * x + 0) = 255;
+				}
+				if (cur2.at<uchar>(y, x) > 0)
+				{
+					cur_cur2.at<uchar>(y, 3 * x + 2) = 255;
+				}
+			}
+		}
+	}
+	imwrite(res_pth + "\\cur_cur2.png", cur_cur2);
+	//
+	delete[] ofs2;
+	delete[] dn_depth;
+	delete[] sftofs2;
+	delete[] sftDepth2;
+	delete[] dpth2;
+	delete[] invs_ofst;
+	delete[] fake_offs;
+	delete[] fake_depth;
+	delete[] cur2_offs;
+	delete[] cur2_depth;
+	return 0;
+}
+
+void post_processing(float* sftDepth2,int rows,int cols,float inv_d)
+{
+	int n = rows * cols;
 	for (int i = 0; i < n; i++)
 	{
 		float val = sftDepth2[i];
@@ -148,56 +318,7 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	
-	vector<vector<Point>> dp_set=sdsg::seed_seg(sftDepth2, rows, cols);
-	float *dpth2 =sgns::denoise(sftDepth2, rows, cols, dp_set);
-	string fs_str = oin_pth + "\\hand_denoise_dpth.raw";
-	float* dn_depth = dbn::read_depth(fs_str, rows, cols);
-	if (!dn_depth)
-	{
-		dn_depth=hdde::hand_dn(dpth2, rows, cols, dp_set, fs_str);
-	}
-	imwrite(res_pth + "\\dn_depth.png", psd2::pseudocolor(dn_depth, rows, cols));
-	float* invs_ofst = fs2d::depth2offset(dn_depth, rows, cols, fxy, baseline, wall, inv_d);
-	Mat fake_trg = f2tg::offset2targ(ref, invs_ofst);
-	imwrite(res_pth + "\\fake_trg.png", fake_trg);
-	for (int y = 0; y < rows; y++)
-	{
-		for (int x = 0; x < cols; x++)
-		{
-			fake_trg.at<uchar>(y, x) = fake_trg.at<uchar>(y, x) / 255;
-		}
-	}
-	float* fake_offs = NULL;
-	float* fake_depth = NULL;
-	{
-		Mat out;
-		Mat peak;
-		Mat s1;
-		Mat subpixeMap;
-		Mat max_ix;
-		ofst::up = 0;
-		ofst::down = 0;
-		int16_t* fake_ofs = ofst::fastBlockMatchPadding_Y_first(ref, fake_trg, out, peak, subpixeMap, s1, max_ix);
-		fake_offs = cvti162f(fake_ofs, n);
-		delete[] fake_ofs;
-		fake_depth = fs2d::offset2depth(fake_offs, rows, cols, fxy, baseline, wall, search_box, mbsize);
-		imwrite(res_pth + "\\fake_depth.png", psd2::pseudocolor(fake_depth, rows, cols));
-	}
-	//
-	
-	delete[] ofs2;
-	delete[] dn_depth;
-	delete[] sftofs2;
-	delete[] sftDepth2;
-	delete[] dpth2;
-	delete[] invs_ofst;
-	delete[] fake_offs;
-	delete[] fake_depth;
-	return 0;
 }
-
-
 
 Mat dif_offset(float* in_depth, float* calDepth, int rows, int cols, int len)
 {
