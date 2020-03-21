@@ -5,7 +5,7 @@ namespace bnz
 	const static float binsize = 7;
 	//const static float th0 = 1.1;// 1.1;
 
-	float th_l = 1.08125;// 1.03125;//
+	float th_l = 1.03125;// 1.03125;//
 	float th_h = 7;// 8;
 	float th_abs = 5;// 5;
 
@@ -53,6 +53,15 @@ namespace bnz
 			}
 		}
 	}
+	void EnHance_th2(cv::Mat& InputImg, cv::Mat& EnhanceImg)
+	{
+		cv::Mat bin1;
+		EnHance(InputImg, bin1);
+
+	}
+
+
+
 	void EnHance1(cv::Mat& InputImg, cv::Mat& EnhanceImg)
 	{
 		EnhanceImg = cv::Mat(InputImg.rows, InputImg.cols, CV_8UC1);

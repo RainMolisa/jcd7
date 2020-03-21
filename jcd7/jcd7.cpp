@@ -14,7 +14,8 @@ Mat cut_patch(Mat img, Rect pos);
 float* cvti162f(int16_t* ivec, int n);
 // ..\set\01 ref_640.bin 40cm_800x640-00001395-ir.bin 640 800 943 40 600 64 19
 // ..\set\04 ref_1280_0.bin 40cm_subpixel1_y1_x64-00000347-ir.bin 1280 800 846.67 42 600 64 25
-// 
+// D:\jhh\pyproj\dpth_tst\a_data\doe_compare\d\20\ ref_1280x800_600mm.bin ir_1280x800_600mm.yuv 1280 800 941.3 40 600 64 19
+
 int main(int argc, char** argv)
 {
 	int rows, cols;
@@ -54,7 +55,7 @@ int main(int argc, char** argv)
 	Mat ref = binref(wrk_pth + "\\" + ref_pth, rows, cols);
 	//ref = bft::bin_filter02(ref);
 	imwrite(res_pth + "\\ref.png", ref);
-	Mat cur_ir = skg::spckl2png(wrk_pth + "\\" + cur_pth, rows, cols,0);
+	Mat cur_ir = skg::spckl2png(wrk_pth + "\\" + cur_pth, rows, cols,1);
 	imwrite(res_pth + "\\cur_ir.png", cur_ir);
 	Mat cur;
 	bnz::EnHance(cur_ir, cur);
