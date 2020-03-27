@@ -34,9 +34,26 @@ namespace dbn
 		int n = rows * cols;
 		for (int i = 0; i < n; i++)
 		{
-			int16_t val = depth[i];
+			float val = depth[i];
 			val = val * 2;
-			fp.write((char*)(&val), sizeof(int16_t));
+			int16_t v2 = val;
+			fp.write((char*)(&v2), sizeof(int16_t));
+		}
+		fp.close();
+	}
+	void write_depth_txt(float* depth, int rows, int cols, std::string fstr)
+	{
+		std::fstream fp;
+		fp.open(fstr, std::ios::out);
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				int i = y * cols + x;
+				float val = depth[i];
+				fp << val << " ";
+			}
+			fp << std::endl;
 		}
 		fp.close();
 	}
