@@ -13,6 +13,7 @@ test new binarize
 #include "..\jcd7\spckl2png.h"
 #include "..\jcd7\binarize.h"
 #include "..\jcd7_2\offset2target.h"
+#include "..\s2k\s_k.h"
 using namespace std;
 using namespace cv;
 float* cvti162f(int16_t* ivec, int n);
@@ -225,6 +226,44 @@ int main(int argc, char** argv)
 		dbn::write_depth_txt(sftDepth4, rows, cols, res_pth + "\\th_abs\\soft_depth4.txt");
 		delete[] ofs4;
 		delete[] sftofs4;
+	}
+
+	{
+		string k_str = res_pth + "\\k";
+		system(("mkdir " + k_str).c_str());
+		float s = s_k::k2s(5, bnz::th_l);
+		//
+		Mat out2;
+		Mat peak2;
+		Mat s12;
+		Mat subpixeMap2;
+		Mat max_ix2;
+		ofst::up = 0;
+		ofst::down = 0;
+		//
+		Mat cur2;
+		//bnz::th_abs = 60;
+		bnz::s = s;
+		bnz::EnHance_th2(cur_ir, cur2);
+		//bnz::th_abs = bnz::def_th_abs;
+		imwrite(k_str + "\\cur2.png", cur2);
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < cols; x++)
+			{
+				cur2.at<uchar>(y, x) = cur2.at<uchar>(y, x) / 255;
+			}
+		}
+		int16_t* ofs3 = ofst::fastBlockMatchPadding_Y_first(ref, cur2, out2, peak2, subpixeMap2, s12, max_ix2);
+		float* sftofs3 = cvti162f(ofs3, n);
+		float* sftDepth3 = fs2d::offset2depth(sftofs3, rows, cols, fxy, baseline, wall, search_box, mbsize);
+		Mat sftDshw3 = psd2::pseudocolor(sftDepth3, rows, cols);
+		imwrite(k_str + "\\sftDshw3.png", sftDshw3);
+		dbn::write_depth(sftDepth3, rows, cols, k_str + "\\soft_depth3.raw");
+		dbn::write_depth_txt(sftDepth3, rows, cols, k_str + "\\soft_depth3.txt");
+		delete[] ofs3;
+		delete[] sftofs3;
+		//
 	}
 	//
 	delete[] ofs2;

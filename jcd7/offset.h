@@ -258,57 +258,65 @@ namespace ofst
 		std::cout << "Times passed in seconds: " << t << std::endl;
 
 		//count number of 1s in each block
-		int* intgImage0 = (int*)malloc(sizeof(int) * height1 * width1);
-		int* intgImage1 = (int*)malloc(sizeof(int) * height1 * width1);
-		memset(intgImage0, 0, sizeof(int) * height1 * width1);
-		memset(intgImage1, 0, sizeof(int) * height1 * width1);
+		int num1Count_ps = 16;
+		int n1c_psb = num1Count_ps / 2;
+
+		int height2 = ref.rows + 2 * n1c_psb;
+		int width2 = ref.cols + 2 * n1c_psb;
+
+		int* intgImage0 = (int*)malloc(sizeof(int) * height2 * width2);
+		int* intgImage1 = (int*)malloc(sizeof(int) * height2 * width2);
+		memset(intgImage0, 0, sizeof(int) * height2* width2);
+		memset(intgImage1, 0, sizeof(int) * height2* width2);
 
 
-		for (int i = 0; i < height1; i++)
+		for (int i = 0; i < height2; i++)
 		{
-			index = i * width1 + 0;
+			index = i * width2 + 0;
 			intgImage0[index] = input0Pad[index];
 		}
-		for (int i = 0; i < height1; i++)
+		for (int i = 0; i < height2; i++)
 		{
-			for (int j = 1; j < width1; j++)
+			for (int j = 1; j < width2; j++)
 			{
-				index = i * width1 + j;
+				index = i * width2 + j;
 				intgImage0[index] = input0Pad[index] + intgImage0[index - 1];
 			}
 		}
-		for (int j = 0; j < width1; j++)
+		for (int j = 0; j < width2; j++)
 		{
 			index = j;
 			intgImage1[index] = intgImage0[index];
 		}
-		for (int i = 1; i < height1; i++)
+		for (int i = 1; i < height2; i++)
 		{
-			for (int j = 0; j < width1; j++)
+			for (int j = 0; j < width2; j++)
 			{
-				index = i * width1 + j;
-				intgImage1[index] = intgImage1[index - width1] + intgImage0[index];
+				index = i * width2 + j;
+				intgImage1[index] = intgImage1[index - width2] + intgImage0[index];
 			}
 		}
 		int* num1Count = (int*)malloc(sizeof(int) * height * width);
-		for (int i = semi_mb + 1; i < height1 - semi_mb; i++)
+		
+		for (int i = n1c_psb + 1; i < height2 - n1c_psb; i++)
 		{
-			for (int j = semi_mb + 1; j < width1 - semi_mb; j++)
+			for (int j = n1c_psb + 1; j < width2 - n1c_psb; j++)
 			{
-				num1Count[(i - semi_mb) * width + j - semi_mb] = intgImage1[(i + semi_mb) * width1 + j + semi_mb] - intgImage1[(i - semi_mb - 1) * width1 + j + semi_mb] - intgImage1[(i + semi_mb) * width1 + j - semi_mb - 1]
-					+ intgImage1[(i - semi_mb - 1) * width1 + j - semi_mb - 1];
+				num1Count[(i - n1c_psb) * width + j - n1c_psb] = intgImage1[(i + n1c_psb) * width2 + j + n1c_psb]
+					- intgImage1[(i - n1c_psb - 1) * width2 + j + n1c_psb] - intgImage1[(i + n1c_psb) * width2 + j - n1c_psb - 1]
+					+ intgImage1[(i - n1c_psb - 1) * width2 + j - n1c_psb - 1];
 			}
 		}
-		num1Count[0] = intgImage1[(semi_mb + semi_mb) * width1 + semi_mb + semi_mb];
-		for (int i = semi_mb + 1; i < height1 - semi_mb; i++)
+		num1Count[0] = intgImage1[(n1c_psb + n1c_psb) * width2 + n1c_psb + n1c_psb];
+		for (int i = n1c_psb + 1; i < height2 - n1c_psb; i++)
 		{
-			num1Count[(i - semi_mb) * width] = intgImage1[(i + semi_mb) * width1 + semi_mb + semi_mb] - intgImage1[(i - semi_mb - 1) * width1 + semi_mb + semi_mb];
+			num1Count[(i - n1c_psb) * width] = intgImage1[(i + n1c_psb) * width2 + n1c_psb + n1c_psb] - intgImage1[(i - n1c_psb - 1) * width2 + n1c_psb + n1c_psb];
 		}
-		for (int j = semi_mb + 1; j < width1 - semi_mb; j++)
+		for (int j = n1c_psb + 1; j < width2 - n1c_psb; j++)
 		{
-			num1Count[j - semi_mb] = intgImage1[(semi_mb + semi_mb) * width1 + j + semi_mb] - intgImage1[(semi_mb + semi_mb) * width1 + j - semi_mb - 1];
+			num1Count[j - n1c_psb] = intgImage1[(n1c_psb + n1c_psb) * width2 + j + n1c_psb] - intgImage1[(n1c_psb + n1c_psb) * width2 + j - n1c_psb - 1];
 		}
-		Mat num1CountImg(rel.rows, rel.cols, CV_8UC1, Scalar::all(0));
+		/*Mat num1CountImg(rel.rows, rel.cols, CV_8UC1, Scalar::all(0));
 
 		for (int i = 0; i < rel.rows; i++)
 		{
@@ -316,7 +324,7 @@ namespace ofst
 			{
 				num1CountImg.at<uchar>(i, j) = num1Count[i * width + j];
 			}
-		}
+		}*/
 #ifdef mk_log
 		imwrite("num1CountImg.bmp", num1CountImg);
 #endif

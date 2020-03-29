@@ -16,6 +16,12 @@ namespace bnz
 
 	const static float pixelnum = binsize * binsize;
 	
+	const float def_x = 255;
+	const float def_s = 0;//(0.0/255.0)
+
+	float x = def_x;
+	float s = def_s;
+
 	void EnHance(cv::Mat& InputImg, cv::Mat& EnhanceImg,cv::Mat* mn=NULL)
 	{
 		EnhanceImg= cv::Mat(InputImg.rows, InputImg.cols, CV_8UC1);
@@ -60,8 +66,7 @@ namespace bnz
 	}
 	void EnHance_th2(cv::Mat& InputImg, cv::Mat& EnhanceImg,cv::Mat* skImg2=NULL)
 	{
-		const float x = 255;
-		const float s = 0.0/255.0;
+		
 		int ilist[2];
 		ilist[0] = x * s;
 		ilist[1] = x;
