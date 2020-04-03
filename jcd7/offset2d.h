@@ -38,7 +38,7 @@ namespace fs2d
 			min_val = (val < min_val ? val : min_val);
 			max_val = (val > max_val ? val : max_val);
 		}
-		cv::Mat res(rows, cols, CV_8UC1,Scalar(0));
+		cv::Mat res(rows, cols, CV_8UC1,cv::Scalar(0));
 		for (int y = 0; y < rows; y++)
 		{
 			for (int x = 0; x < cols; x++)
@@ -69,7 +69,7 @@ namespace fs2d
 			min_val = (val < min_val ? val : min_val);
 			max_val = (val > max_val ? val : max_val);
 		}
-		cv::Mat res(rows, cols, CV_8UC1, Scalar(0));
+		cv::Mat res(rows, cols, CV_8UC1, cv::Scalar(0));
 		for (int y = 0; y < rows; y++)
 		{
 			for (int x = 0; x < cols; x++)
@@ -85,19 +85,20 @@ namespace fs2d
 		return res;
 	}
 	float* offset2depth(float* fst,int rows,int cols,
-		float fxy,int baseline,int wall,int search_box,int mbsize)
+		float fxy,int baseline,int wall)
 	{
-		int l = -(search_box - mbsize / 2);
+		//int l = -search_box;
 		int n = rows * cols;
 		float* res = new float[n];
 		for (int i = 0; i < n; i++)
 		{
 			float val = fst[i];
+			val = (val / 16.0);
 			float dval;
-			if ((fxy * baseline != wall * ((val) / 16.0)))
+			if ((fxy * baseline != wall * ((val))))
 			{
 				dval = (fxy * baseline * wall) / \
-					(fxy * baseline - wall * ((val) / 16.0));
+					(fxy * baseline - wall * ((val)));
 			}
 			else
 			{
@@ -135,5 +136,14 @@ namespace fs2d
 		}
 		return offset;
 	}
+
+	std::string o2d_function(float fxy, int baseline, int wall)
+	{
+		std::string res;
+		res = cv::format("depth=(%7.3f*%d*%d)/(%7.3f*%d-%d*offset)",
+			fxy , baseline , wall,fxy , baseline , wall);
+		return res;
+	}
+
 };
 

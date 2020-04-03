@@ -18,6 +18,7 @@ using namespace std;
 using namespace cv;
 float* cvti162f(int16_t* ivec, int n);
 // ..\set\11 ref_1280_0307.bin 45face-00000269-ir.bin 0 1280 800 846.67 42 600 64 25
+// ..\set\19 ref.yuv face80cm-00000143-ir.bin 0 1280 800 846.67 42 600 64 25
 int main(int argc, char** argv)
 {
 	int rows, cols;

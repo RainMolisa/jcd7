@@ -6,7 +6,7 @@
 using namespace cv;
 using namespace std;
 float scale = 1;
-const int rows = 640;
+const int rows = 1280;
 const int cols = 800;
 fstream ot_file;
 string get_folder(string file);

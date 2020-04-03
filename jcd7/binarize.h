@@ -7,8 +7,8 @@ namespace bnz
 	//const static float th0 = 1.1;// 1.1;
 
 	const float def_th_l = 1.03125;// 1.03125;//
-	const float def_th_h = 7;// 8;
-	const float def_th_abs = 5;// 5;
+	const float def_th_h = 8;// 8;
+	const float def_th_abs = 70;// 5;
 
 	float th_l = def_th_l;// 1.03125;//
 	float th_h = def_th_h;// 8;
