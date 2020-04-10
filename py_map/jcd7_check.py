@@ -8,7 +8,7 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import math as mth
-
+import xlwings as xw
 
 # python new_binarize_map.py -p ..\\set\\19 --ss=64 --ps=25
 if __name__=='__main__':
@@ -84,7 +84,17 @@ if __name__=='__main__':
     plt.legend()
     plt.savefig(wrk_pth+'/res/point_res/point_result.png')
     
-    
+    def proc1():
+        app = xw.App(visible=True, add_book=False)
+        wb=app.books.add()
+        data1=np.loadtxt(wrk_pth+'/res/point2res/point_depth2.txt')
+        wb.sheets.active.range('A4').options(expand='table').value = data1
+        
+        wb.save(wrk_pth+'/res/point2res/point_depth2.xlsx')
+        wb.close()
+        app.quit()
+        return
+    proc1()
 
 
 

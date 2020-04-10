@@ -137,6 +137,13 @@ namespace fs2d
 		return offset;
 	}
 
+	float depth2offset(float depth,float fxy,int baseline,int wall)
+	{
+		float buf = fxy * baseline;
+		float buf2 = (buf / float(wall) - buf / depth);
+		return buf2;
+	}
+
 	std::string o2d_function(float fxy, int baseline, int wall)
 	{
 		std::string res;

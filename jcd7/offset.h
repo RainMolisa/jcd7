@@ -34,6 +34,15 @@ namespace ofst
 		search_box = r + mbsize / 2;
 	}
 
+	void set_env(int l_val,int r_val,int mbs)
+	{
+		mbsize = mbs;
+		l = l_val;
+		r = r_val;
+		int rl = r - l;
+		search_box = rl / 2 + mbsize / 2;
+	}
+
 	int subpixel_4bit(int numerator, int denom);
 
 	int16_t* fastBlockMatchPadding_Y_first(Mat& ref, Mat& rel,\
